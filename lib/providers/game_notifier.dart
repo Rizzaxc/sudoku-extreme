@@ -127,8 +127,13 @@ class GameNotifier extends StateNotifier<GameState> {
       final isCorrect =
           SudokuValidator.isCorrectPlacement(index, digit, state.solution);
       if (cell.isError) {
-        // Error cells only accept the correct digit; wrong digit is silently ignored
-        if (isCorrect) _placeCorrect(index, digit);
+        if (isCorrect) {
+          _placeCorrect(index, digit);
+        } else if (digit != cell.value) {
+          // Different wrong digit — counts as a new mistake
+          _registerMistake(index, digit);
+        }
+        // Same wrong digit already shown — no-op
       } else {
         if (isCorrect) {
           _placeCorrect(index, digit);
