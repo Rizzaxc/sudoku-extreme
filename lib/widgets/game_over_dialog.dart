@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
+Future<void> showGameOverDialog(
+  BuildContext context, {
+  required bool won,
+  required int mistakes,
+  required VoidCallback onHome,
+}) {
+  return showShadDialog(
+    context: context,
+    builder: (context) => ShadDialog.alert(
+      title: Text(won ? 'Puzzle Solved!' : 'Game Over'),
+      description: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          won
+              ? 'Great job! You solved it with $mistakes mistake${mistakes == 1 ? '' : 's'}.'
+              : 'You used all $mistakes mistakes. Better luck next time!',
+        ),
+      ),
+      actions: [
+        ShadButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            onHome();
+          },
+          child: const Text('Back to Home'),
+        ),
+      ],
+    ),
+  );
+}

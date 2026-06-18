@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d D:\\\\Work\\\\sudoku)",
+      "Bash(powershell -NoProfile -Command \"Get-ChildItem -Recurse -Force | Select-Object FullName, PSIsContainer | Format-Table -AutoSize\")",
+      "Bash(java -jar \"D:/Work/sudoku/qqwing-1.3.4.jar\" --help)",
+      "Bash(where java *)",
+      "Bash(where python *)",
+      "Bash(where python3 *)",
+      "Bash(where flutter *)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(npx skills *)",
+      "PowerShell(java -jar \"D:\\\\Work\\\\sudoku\\\\qqwing-1.3.4.jar\" --help 2>&1)"
+    ]
+  }
+}
