@@ -9,7 +9,7 @@ class SudokuCell extends StatelessWidget {
     required this.index,
     required this.isSelected,
     required this.isPeer,
-    required this.isSameValue,
+    required this.isMatchingDigit,
     required this.onTap,
   });
 
@@ -17,7 +17,7 @@ class SudokuCell extends StatelessWidget {
   final int index;
   final bool isSelected;
   final bool isPeer;
-  final bool isSameValue;
+  final bool isMatchingDigit;
   final VoidCallback onTap;
 
   @override
@@ -25,11 +25,15 @@ class SudokuCell extends StatelessWidget {
     final theme = ShadTheme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final isDark = theme.brightness == Brightness.dark;
     Color bgColor;
     if (isSelected) {
       bgColor = colorScheme.primary.withValues(alpha: 0.25);
-    } else if (isSameValue && cell.value != 0) {
-      bgColor = colorScheme.primary.withValues(alpha: 0.12);
+    } else if (isMatchingDigit) {
+      // Warm/cool accent tint — visually distinct from the gray peer highlight
+      bgColor = isDark
+          ? Colors.amber.withValues(alpha: 0.22)
+          : Colors.blue.withValues(alpha: 0.18);
     } else if (isPeer) {
       bgColor = colorScheme.muted.withValues(alpha: 0.5);
     } else {
@@ -51,14 +55,31 @@ class SudokuCell extends StatelessWidget {
 
   Widget _buildValue(
       BuildContext context, ShadThemeData theme, ShadColorScheme colorScheme) {
-    final color = cell.isGiven ? colorScheme.foreground : colorScheme.primary;
-    final fontWeight = cell.isGiven ? FontWeight.w700 : FontWeight.w500;
+    final Color color;
+    final FontWeight fontWeight;
+    final FontStyle fontStyle;
+
+    if (cell.isError) {
+      color = Colors.red;
+      fontWeight = FontWeight.w500;
+      fontStyle = FontStyle.italic;
+    } else if (cell.isGiven) {
+      color = colorScheme.foreground;
+      fontWeight = FontWeight.w700;
+      fontStyle = FontStyle.normal;
+    } else {
+      color = colorScheme.primary;
+      fontWeight = FontWeight.w500;
+      fontStyle = FontStyle.normal;
+    }
+
     return Center(
       child: Text(
         '${cell.value}',
         style: TextStyle(
           fontSize: 20,
           fontWeight: fontWeight,
+          fontStyle: fontStyle,
           color: color,
         ),
       ),

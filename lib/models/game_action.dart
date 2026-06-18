@@ -34,10 +34,12 @@ final class EraseCell extends GameAction {
   const EraseCell({
     required this.index,
     required this.prevValue,
+    required this.prevIsError,
     required this.prevPencilMarks,
   });
 
   final int index;
   final int prevValue;
+  final bool prevIsError;
   final Set<int> prevPencilMarks;
 }

@@ -9,11 +9,13 @@ class SudokuGrid extends StatelessWidget {
     super.key,
     required this.cells,
     required this.selectedIndex,
+    required this.selectedDigit,
     required this.onCellTap,
   });
 
   final List<Cell> cells;
   final int selectedIndex;
+  final int selectedDigit;
   final void Function(int index) onCellTap;
 
   @override
@@ -26,8 +28,6 @@ class SudokuGrid extends StatelessWidget {
     final selectedPeers = selectedIndex >= 0
         ? SudokuValidator.peers(selectedIndex).toSet()
         : const <int>{};
-    final selectedValue =
-        selectedIndex >= 0 ? cells[selectedIndex].value : 0;
 
     return AspectRatio(
       aspectRatio: 1,
@@ -55,8 +55,10 @@ class SudokuGrid extends StatelessWidget {
             );
 
             final isPeer = selectedPeers.contains(index);
-            final isSameValue =
-                selectedValue != 0 && cells[index].value == selectedValue;
+            final isMatchingDigit = selectedDigit != 0
+                && cells[index].value == selectedDigit
+                && !cells[index].isError
+                && index != selectedIndex;
 
             return Container(
               decoration: BoxDecoration(border: border),
@@ -65,7 +67,7 @@ class SudokuGrid extends StatelessWidget {
                 index: index,
                 isSelected: index == selectedIndex,
                 isPeer: isPeer,
-                isSameValue: isSameValue && index != selectedIndex,
+                isMatchingDigit: isMatchingDigit,
                 onTap: () => onCellTap(index),
               ),
             );

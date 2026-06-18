@@ -63,7 +63,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
       _backgroundDialogShowing = false;
       if (!mounted) return;
       if (choice == BackgroundChoice.quit) {
-        ref.read(streakProvider.notifier).reset();
+        final gs = ref.read(gameNotifierProvider);
+        if (gs.undoStack.isNotEmpty || gs.mistakes > 0) {
+          ref.read(streakProvider.notifier).reset();
+        }
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else {
         ref.read(streakProvider.notifier).reset();
@@ -195,11 +198,19 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     final isActive = gameState.status == GameStatus.playing;
 
+    final completedDigits = <int>{};
+    for (var d = 1; d <= 9; d++) {
+      if (gameState.cells.where((c) => c.value == d).length == 9) {
+        completedDigits.add(d);
+      }
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          if (gameState.status == GameStatus.playing) {
+          if (gameState.status == GameStatus.playing &&
+              (gameState.undoStack.isNotEmpty || gameState.mistakes > 0)) {
             ref.read(streakProvider.notifier).reset();
           }
           Navigator.of(context).pop();
@@ -265,6 +276,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                                 child: SudokuGrid(
                                   cells: gameState.cells,
                                   selectedIndex: gameState.selectedIndex,
+                                  selectedDigit: gameState.selectedDigit,
                                   onCellTap: notifier.selectCell,
                                 ),
                               ),
@@ -280,6 +292,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                               NumberPad(
                                 enabled: isActive,
                                 selectedDigit: gameState.selectedDigit,
+                                completedDigits: completedDigits,
                                 onDigit: notifier.selectDigit,
                               ),
                               const SizedBox(height: 12),

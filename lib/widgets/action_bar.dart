@@ -52,7 +52,7 @@ class ActionBar extends StatelessWidget {
               child: ShadButton.ghost(
                 onPressed: onTogglePencil,
                 leading: Icon(
-                  LucideIcons.pencil,
+                  pencilMode ? LucideIcons.pencil : LucideIcons.pencilOff,
                   size: 20,
                   color: pencilMode
                       ? colorScheme.primary

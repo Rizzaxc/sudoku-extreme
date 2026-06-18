@@ -6,11 +6,13 @@ class NumberPad extends StatelessWidget {
     super.key,
     required this.onDigit,
     required this.selectedDigit,
+    required this.completedDigits,
     this.enabled = true,
   });
 
   final void Function(int digit) onDigit;
   final int selectedDigit;
+  final Set<int> completedDigits;
   final bool enabled;
 
   @override
@@ -26,7 +28,8 @@ class NumberPad extends StatelessWidget {
                   child: _DigitButton(
                     digit: row * 3 + col + 1,
                     isSelected: selectedDigit == row * 3 + col + 1,
-                    enabled: enabled,
+                    enabled: enabled &&
+                        !completedDigits.contains(row * 3 + col + 1),
                     onTap: () => onDigit(row * 3 + col + 1),
                   ),
                 ),

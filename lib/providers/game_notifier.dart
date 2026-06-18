@@ -93,20 +93,25 @@ class GameNotifier extends StateNotifier<GameState> {
     if (state.cells.isEmpty || state.status != GameStatus.playing) return;
     final cell = state.cells[index];
 
+    // Correctly filled cell (given or correct user placement): select + pick up digit
+    if (cell.value != 0 && !cell.isError) {
+      state = state.copyWith(selectedIndex: index, selectedDigit: cell.value);
+      return;
+    }
+
     state = state.copyWith(selectedIndex: index);
 
     if (cell.isGiven) return;
-    if (cell.value != 0) return; // correct placement — immutable, just update highlight
-
     final digit = state.selectedDigit;
     if (digit == 0) return; // no digit selected — tap just highlights the cell
     if (state.pencilMode) {
+      if (cell.isError) return; // must erase or overwrite error before pencilling
       _togglePencil(index, digit);
     } else {
       if (SudokuValidator.isCorrectPlacement(index, digit, state.solution)) {
         _placeCorrect(index, digit);
       } else {
-        _registerMistake();
+        _registerMistake(index, digit);
       }
     }
   }
@@ -133,7 +138,7 @@ class GameNotifier extends StateNotifier<GameState> {
       }
     }
 
-    cells[idx] = cells[idx].copyWith(value: digit, pencilMarks: const {});
+    cells[idx] = cells[idx].copyWith(value: digit, pencilMarks: const {}, isError: false);
 
     final action = PlaceValue(
       index: idx,
@@ -162,9 +167,16 @@ class GameNotifier extends StateNotifier<GameState> {
       undoStack: newUndo,
       status: newStatus,
     );
+
+    // Auto-deselect the digit once all 9 of it are placed
+    if (newStatus != GameStatus.won &&
+        state.selectedDigit == digit &&
+        state.cells.where((c) => c.value == digit).length == 9) {
+      state = state.copyWith(selectedDigit: 0);
+    }
   }
 
-  void _registerMistake() {
+  void _registerMistake(int idx, int digit) {
     final newMistakes = state.mistakes + 1;
     final isLost = newMistakes >= state.maxMistakes;
     final newStatus = isLost ? GameStatus.lost : state.status;
@@ -174,8 +186,14 @@ class GameNotifier extends StateNotifier<GameState> {
     } else {
       _sound.playMistake();
     }
-    state = state.copyWith(mistakes: newMistakes, status: newStatus);
-    // Cell stays empty — no undo stack entry.
+    // Show the wrong digit in red on the cell; no undo entry (mistakes are permanent).
+    final cells = List<Cell>.from(state.cells);
+    cells[idx] = cells[idx].copyWith(
+      value: digit,
+      isError: true,
+      pencilMarks: const {},
+    );
+    state = state.copyWith(cells: cells, mistakes: newMistakes, status: newStatus);
   }
 
   void _togglePencil(int idx, int digit) {
@@ -205,15 +223,17 @@ class GameNotifier extends StateNotifier<GameState> {
     final idx = state.selectedIndex;
     if (idx < 0 || state.cells.isEmpty) return;
     final cell = state.cells[idx];
-    if (cell.isGiven || cell.pencilMarks.isEmpty) return;
+    if (cell.isGiven) return;
+    if (!cell.isError && cell.pencilMarks.isEmpty) return;
 
     final action = EraseCell(
       index: idx,
-      prevValue: 0,
+      prevValue: cell.value,
+      prevIsError: cell.isError,
       prevPencilMarks: Set<int>.from(cell.pencilMarks),
     );
     final cells = List<Cell>.from(state.cells);
-    cells[idx] = cell.copyWith(pencilMarks: const {});
+    cells[idx] = cell.copyWith(value: 0, isError: false, pencilMarks: const {});
     final newUndo = List<GameAction>.from(state.undoStack)..add(action);
     state = state.copyWith(cells: cells, undoStack: newUndo);
     _sound.playErase();
@@ -239,9 +259,10 @@ class GameNotifier extends StateNotifier<GameState> {
           marks.remove(digit);
         }
         cells[index] = cells[index].copyWith(pencilMarks: marks);
-      case EraseCell(:final index, :final prevValue, :final prevPencilMarks):
+      case EraseCell(:final index, :final prevValue, :final prevIsError, :final prevPencilMarks):
         cells[index] = cells[index].copyWith(
           value: prevValue,
+          isError: prevIsError,
           pencilMarks: prevPencilMarks,
         );
     }
