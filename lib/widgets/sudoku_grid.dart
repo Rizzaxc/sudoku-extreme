@@ -20,8 +20,8 @@ class SudokuGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
     final borderColor = theme.colorScheme.border;
-    final thickBorder = BorderSide(color: borderColor, width: 2.5);
-    final thinBorder = BorderSide(color: borderColor.withValues(alpha: 0.5), width: 0.5);
+    final thickBorder = BorderSide(color: borderColor, width: 3.0);
+    final thinBorder = BorderSide(color: borderColor, width: 1.0);
 
     final selectedPeers = selectedIndex >= 0
         ? SudokuValidator.peers(selectedIndex).toSet()
