@@ -15,6 +15,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _solvedCount = 0;
   int? _bestTime;
+  int? _bestScore;
+  int _bestStreak = 0;
 
   void _refreshStats() {
     if (!mounted) return;
@@ -22,6 +24,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() {
       _solvedCount = repo.solvedCount();
       _bestTime = repo.loadBestTime();
+      _bestScore = repo.loadBestScore();
+      _bestStreak = repo.loadBestStreak();
     });
   }
 
@@ -79,28 +83,78 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       leading: const Icon(LucideIcons.play),
                       child: const Text('Play'),
                     ),
-                    const SizedBox(height: 24),
-                    // Records row — always shown
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 32),
+                    Table(
+                      defaultColumnWidth: const IntrinsicColumnWidth(),
+                      defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
                       children: [
-                        Icon(LucideIcons.flame,
-                            size: 16,
-                            color: theme.colorScheme.mutedForeground),
-                        const SizedBox(width: 4),
-                        Text('$streak', style: theme.textTheme.muted),
-                        const SizedBox(width: 24),
-                        Icon(LucideIcons.timer,
-                            size: 16,
-                            color: theme.colorScheme.mutedForeground),
-                        const SizedBox(width: 4),
-                        if (_bestTime != null)
-                          Text(_formatTime(_bestTime!),
-                              style: theme.textTheme.muted)
-                        else
-                          Icon(LucideIcons.infinity,
-                              size: 16,
-                              color: theme.colorScheme.mutedForeground),
+                        TableRow(children: [
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(right: 8, bottom: 10),
+                            child: Icon(LucideIcons.timer,
+                                size: 16,
+                                color: theme.colorScheme.mutedForeground),
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(right: 20, bottom: 10),
+                            child: Text('Best Time',
+                                style: theme.textTheme.muted),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _bestTime != null
+                                ? Text(_formatTime(_bestTime!),
+                                    style: theme.textTheme.p)
+                                : Icon(LucideIcons.infinity,
+                                    size: 16,
+                                    color:
+                                        theme.colorScheme.mutedForeground),
+                          ),
+                        ]),
+                        TableRow(children: [
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(right: 8, bottom: 10),
+                            child: Icon(LucideIcons.flame,
+                                size: 16,
+                                color: theme.colorScheme.mutedForeground),
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(right: 20, bottom: 10),
+                            child: Text('Best Streak',
+                                style: theme.textTheme.muted),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text.rich(TextSpan(children: [
+                              TextSpan(
+                                  text: '$_bestStreak',
+                                  style: theme.textTheme.p),
+                              TextSpan(
+                                  text: '  (Current: $streak)',
+                                  style: theme.textTheme.muted),
+                            ])),
+                          ),
+                        ]),
+                        TableRow(children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Icon(LucideIcons.star,
+                                size: 16,
+                                color: theme.colorScheme.mutedForeground),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 20),
+                            child: Text('Best Score',
+                                style: theme.textTheme.muted),
+                          ),
+                          Text('${_bestScore ?? 0}',
+                              style: theme.textTheme.p),
+                        ]),
                       ],
                     ),
                   ],

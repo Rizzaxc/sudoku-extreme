@@ -93,9 +93,25 @@ class GameNotifier extends StateNotifier<GameState> {
     if (state.cells.isEmpty || state.status != GameStatus.playing) return;
     final cell = state.cells[index];
 
-    // Correctly filled cell (given or correct user placement): select + pick up digit
+    // Apply pending erase if this cell is erasable
+    if (state.pendingErase) {
+      if (!cell.isGiven && (cell.isError || cell.pencilMarks.isNotEmpty)) {
+        _doErase(index);
+        state = state.copyWith(selectedIndex: index);
+        return;
+      }
+      state = state.copyWith(pendingErase: false);
+    }
+
+    // Correctly filled cell: select + pick up digit, unless the digit is exhausted
     if (cell.value != 0 && !cell.isError) {
-      state = state.copyWith(selectedIndex: index, selectedDigit: cell.value);
+      final count =
+          state.cells.where((c) => c.value == cell.value && !c.isError).length;
+      if (count < 9) {
+        state = state.copyWith(selectedIndex: index, selectedDigit: cell.value);
+      } else {
+        state = state.copyWith(selectedIndex: index);
+      }
       return;
     }
 
@@ -103,15 +119,22 @@ class GameNotifier extends StateNotifier<GameState> {
 
     if (cell.isGiven) return;
     final digit = state.selectedDigit;
-    if (digit == 0) return; // no digit selected — tap just highlights the cell
+    if (digit == 0) return;
     if (state.pencilMode) {
-      if (cell.isError) return; // must erase or overwrite error before pencilling
+      if (cell.isError) return;
       _togglePencil(index, digit);
     } else {
-      if (SudokuValidator.isCorrectPlacement(index, digit, state.solution)) {
-        _placeCorrect(index, digit);
+      final isCorrect =
+          SudokuValidator.isCorrectPlacement(index, digit, state.solution);
+      if (cell.isError) {
+        // Error cells only accept the correct digit; wrong digit is silently ignored
+        if (isCorrect) _placeCorrect(index, digit);
       } else {
-        _registerMistake(index, digit);
+        if (isCorrect) {
+          _placeCorrect(index, digit);
+        } else {
+          _registerMistake(index, digit);
+        }
       }
     }
   }
@@ -124,7 +147,6 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void _placeCorrect(int idx, int digit) {
     final cells = List<Cell>.from(state.cells);
-    final prevPencilMarks = Set<int>.from(cells[idx].pencilMarks);
 
     // Collect peer pencil marks that will be cleared.
     final clearedPeerMarks = <int, Set<int>>{};
@@ -140,14 +162,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
     cells[idx] = cells[idx].copyWith(value: digit, pencilMarks: const {}, isError: false);
 
-    final action = PlaceValue(
-      index: idx,
-      newValue: digit,
-      prevPencilMarks: prevPencilMarks,
-      clearedPeerMarks: clearedPeerMarks,
-    );
-    final newUndo = List<GameAction>.from(state.undoStack)..add(action);
-
+    // Correct placements are permanent — not tracked in the undo stack.
     GameStatus newStatus = state.status;
     if (SudokuValidator.isComplete(cells, state.solution)) {
       newStatus = GameStatus.won;
@@ -162,11 +177,7 @@ class GameNotifier extends StateNotifier<GameState> {
       _sound.playPlace();
     }
 
-    state = state.copyWith(
-      cells: cells,
-      undoStack: newUndo,
-      status: newStatus,
-    );
+    state = state.copyWith(cells: cells, status: newStatus);
 
     // Auto-deselect the digit once all 9 of it are placed
     if (newStatus != GameStatus.won &&
@@ -223,9 +234,20 @@ class GameNotifier extends StateNotifier<GameState> {
     final idx = state.selectedIndex;
     if (idx < 0 || state.cells.isEmpty) return;
     final cell = state.cells[idx];
-    if (cell.isGiven) return;
-    if (!cell.isError && cell.pencilMarks.isEmpty) return;
 
+    // Completed cells (given or correct placement) can't be erased directly —
+    // queue the erase so it fires on the next tapped erasable cell.
+    if (cell.isGiven || (!cell.isError && cell.value > 0)) {
+      state = state.copyWith(pendingErase: true);
+      return;
+    }
+
+    if (!cell.isError && cell.pencilMarks.isEmpty) return;
+    _doErase(idx);
+  }
+
+  void _doErase(int idx) {
+    final cell = state.cells[idx];
     final action = EraseCell(
       index: idx,
       prevValue: cell.value,
@@ -235,7 +257,7 @@ class GameNotifier extends StateNotifier<GameState> {
     final cells = List<Cell>.from(state.cells);
     cells[idx] = cell.copyWith(value: 0, isError: false, pencilMarks: const {});
     final newUndo = List<GameAction>.from(state.undoStack)..add(action);
-    state = state.copyWith(cells: cells, undoStack: newUndo);
+    state = state.copyWith(cells: cells, undoStack: newUndo, pendingErase: false);
     _sound.playErase();
   }
 

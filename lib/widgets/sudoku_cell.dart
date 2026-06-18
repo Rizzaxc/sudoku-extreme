@@ -69,7 +69,7 @@ class SudokuCell extends StatelessWidget {
       fontStyle = FontStyle.normal;
     } else {
       color = colorScheme.primary;
-      fontWeight = FontWeight.w500;
+      fontWeight = FontWeight.w700;
       fontStyle = FontStyle.normal;
     }
 

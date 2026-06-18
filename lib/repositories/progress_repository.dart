@@ -7,7 +7,9 @@ class ProgressRepository {
 
   static const _key = 'puzzle_status';
   static const _bestTimeKey = 'best_time';
+  static const _bestScoreKey = 'best_score';
   static const _streakKey = 'streak';
+  static const _bestStreakKey = 'best_streak';
 
   // Returns map of puzzleId → status (1=attempted/DNF, 2=solved).
   // Absent = never tried (available).
@@ -34,8 +36,15 @@ class ProgressRepository {
   int? loadBestTime() => _prefs.getInt(_bestTimeKey);
   Future<void> saveBestTime(int seconds) => _prefs.setInt(_bestTimeKey, seconds);
 
+  int? loadBestScore() => _prefs.getInt(_bestScoreKey);
+  Future<void> saveBestScore(int score) => _prefs.setInt(_bestScoreKey, score);
+
   int loadStreak() => _prefs.getInt(_streakKey) ?? 0;
   Future<void> saveStreak(int streak) => _prefs.setInt(_streakKey, streak);
+
+  int loadBestStreak() => _prefs.getInt(_bestStreakKey) ?? 0;
+  Future<void> saveBestStreak(int streak) =>
+      _prefs.setInt(_bestStreakKey, streak);
 
   Future<void> _update(int id, int status) async {
     final map = loadStatusMap();

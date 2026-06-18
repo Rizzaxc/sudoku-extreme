@@ -9,6 +9,7 @@ class StreakNotifier extends StateNotifier<int> {
   void increment() {
     state += 1;
     _repo.saveStreak(state);
+    if (state > _repo.loadBestStreak()) _repo.saveBestStreak(state);
   }
 
   void reset() {

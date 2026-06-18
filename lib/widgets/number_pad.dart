@@ -6,13 +6,14 @@ class NumberPad extends StatelessWidget {
     super.key,
     required this.onDigit,
     required this.selectedDigit,
-    required this.completedDigits,
+    required this.digitCounts,
     this.enabled = true,
   });
 
   final void Function(int digit) onDigit;
   final int selectedDigit;
-  final Set<int> completedDigits;
+  // digitCounts[d] = how many correct placements of digit d exist (1–9)
+  final List<int> digitCounts;
   final bool enabled;
 
   @override
@@ -27,9 +28,10 @@ class NumberPad extends StatelessWidget {
                 Expanded(
                   child: _DigitButton(
                     digit: row * 3 + col + 1,
+                    remaining: 9 - digitCounts[row * 3 + col + 1],
                     isSelected: selectedDigit == row * 3 + col + 1,
                     enabled: enabled &&
-                        !completedDigits.contains(row * 3 + col + 1),
+                        digitCounts[row * 3 + col + 1] < 9,
                     onTap: () => onDigit(row * 3 + col + 1),
                   ),
                 ),
@@ -43,21 +45,39 @@ class NumberPad extends StatelessWidget {
 class _DigitButton extends StatelessWidget {
   const _DigitButton({
     required this.digit,
+    required this.remaining,
     required this.isSelected,
     required this.enabled,
     required this.onTap,
   });
 
   final int digit;
+  final int remaining;
   final bool isSelected;
   final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final child = Text(
-      '$digit',
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+    final theme = ShadTheme.of(context);
+
+    final child = Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          '$digit',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        ),
+        Text(
+          '$remaining',
+          style: TextStyle(
+            fontSize: 8,
+            color: theme.colorScheme.mutedForeground,
+            height: 1.0,
+          ),
+        ),
+      ],
     );
 
     return Padding(

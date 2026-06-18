@@ -17,6 +17,7 @@ class GameState {
     this.selectedDigit = 0,
     this.elapsedSeconds = 0,
     this.status = GameStatus.idle,
+    this.pendingErase = false,
   });
 
   final List<Cell> cells;
@@ -30,6 +31,7 @@ class GameState {
   final int selectedDigit;
   final int elapsedSeconds;
   final GameStatus status;
+  final bool pendingErase;
 
   static GameState initial() => const GameState(
     cells: [],
@@ -49,6 +51,7 @@ class GameState {
     int? selectedDigit,
     int? elapsedSeconds,
     GameStatus? status,
+    bool? pendingErase,
   }) {
     return GameState(
       cells: cells ?? this.cells,
@@ -62,6 +65,7 @@ class GameState {
       selectedDigit: selectedDigit ?? this.selectedDigit,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       status: status ?? this.status,
+      pendingErase: pendingErase ?? this.pendingErase,
     );
   }
 }

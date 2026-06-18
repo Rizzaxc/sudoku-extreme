@@ -74,12 +74,23 @@ class _GameScreenState extends ConsumerState<GameScreen>
     });
   }
 
+  static int _computeScore(int healthRemaining, int elapsedSeconds) {
+    final timePenalty = (elapsedSeconds ~/ healthRemaining) + elapsedSeconds;
+    return (1000 + 500 * healthRemaining - timePenalty).clamp(0, 9999);
+  }
+
   void _handleGameOver(BuildContext context, GameState gameState) {
     if (_gameOverShown) return;
     _gameOverShown = true;
 
+    int? score;
     if (gameState.status == GameStatus.won) {
       ref.read(streakProvider.notifier).increment();
+      final health = gameState.maxMistakes - gameState.mistakes;
+      score = _computeScore(health, gameState.elapsedSeconds);
+      final repo = ref.read(progressRepositoryProvider);
+      final best = repo.loadBestScore();
+      if (best == null || score > best) repo.saveBestScore(score);
     } else {
       ref.read(streakProvider.notifier).reset();
     }
@@ -90,6 +101,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
         context,
         won: gameState.status == GameStatus.won,
         mistakes: gameState.mistakes,
+        score: score,
         onHome: () {
           if (mounted) {
             Navigator.of(context).popUntil((route) => route.isFirst);
@@ -198,11 +210,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     final isActive = gameState.status == GameStatus.playing;
 
-    final completedDigits = <int>{};
-    for (var d = 1; d <= 9; d++) {
-      if (gameState.cells.where((c) => c.value == d).length == 9) {
-        completedDigits.add(d);
-      }
+    // digitCounts[d] = correct placements of digit d (errors excluded)
+    final digitCounts = List.filled(10, 0);
+    for (final cell in gameState.cells) {
+      if (cell.value > 0 && !cell.isError) digitCounts[cell.value]++;
     }
 
     return PopScope(
@@ -285,6 +296,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                                 maxMistakes: gameState.maxMistakes,
                                 pencilMode: gameState.pencilMode,
                                 canUndo: gameState.undoStack.isNotEmpty && isActive,
+                                pendingErase: gameState.pendingErase,
                                 onUndo: notifier.undo,
                                 onTogglePencil: notifier.togglePencilMode,
                                 onErase: notifier.erase,
@@ -292,7 +304,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                               NumberPad(
                                 enabled: isActive,
                                 selectedDigit: gameState.selectedDigit,
-                                completedDigits: completedDigits,
+                                digitCounts: digitCounts,
                                 onDigit: notifier.selectDigit,
                               ),
                               const SizedBox(height: 12),

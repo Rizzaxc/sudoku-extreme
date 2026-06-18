@@ -11,12 +11,14 @@ class ActionBar extends StatelessWidget {
     required this.onUndo,
     required this.onTogglePencil,
     required this.onErase,
+    this.pendingErase = false,
   });
 
   final int mistakes;
   final int maxMistakes;
   final bool pencilMode;
   final bool canUndo;
+  final bool pendingErase;
   final VoidCallback onUndo;
   final VoidCallback onTogglePencil;
   final VoidCallback onErase;
@@ -41,11 +43,18 @@ class ActionBar extends StatelessWidget {
             leading: Icon(LucideIcons.undo2, size: 20, color: actionColor),
             child: Text('Undo', style: TextStyle(color: actionColor)),
           ),
-          ShadButton.ghost(
-            onPressed: onErase,
-            leading: Icon(LucideIcons.eraser, size: 20, color: actionColor),
-            child: Text('Erase', style: TextStyle(color: actionColor)),
-          ),
+          pendingErase
+              ? ShadButton(
+                  onPressed: onErase,
+                  leading: const Icon(LucideIcons.eraser, size: 20),
+                  child: const Text('Erase'),
+                )
+              : ShadButton.ghost(
+                  onPressed: onErase,
+                  leading:
+                      Icon(LucideIcons.eraser, size: 20, color: actionColor),
+                  child: Text('Erase', style: TextStyle(color: actionColor)),
+                ),
           // Center: Pencil — primary when active, muted when inactive
           Expanded(
             child: Center(
