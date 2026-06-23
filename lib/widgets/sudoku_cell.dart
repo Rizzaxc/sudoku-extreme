@@ -68,7 +68,8 @@ class SudokuCell extends StatelessWidget {
       fontWeight = FontWeight.w700;
       fontStyle = FontStyle.normal;
     } else {
-      color = colorScheme.primary;
+      final isDark = theme.brightness == Brightness.dark;
+      color = isDark ? Colors.pinkAccent : Colors.pink;
       fontWeight = FontWeight.w700;
       fontStyle = FontStyle.normal;
     }

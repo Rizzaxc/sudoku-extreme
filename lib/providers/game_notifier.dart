@@ -147,6 +147,7 @@ class GameNotifier extends StateNotifier<GameState> {
   void selectDigit(int digit) {
     state = state.copyWith(
       selectedDigit: state.selectedDigit == digit ? 0 : digit,
+      selectedIndex: -1,
     );
   }
 
@@ -202,14 +203,23 @@ class GameNotifier extends StateNotifier<GameState> {
     } else {
       _sound.playMistake();
     }
-    // Show the wrong digit in red on the cell; no undo entry (mistakes are permanent).
     final cells = List<Cell>.from(state.cells);
     cells[idx] = cells[idx].copyWith(
       value: digit,
       isError: true,
       pencilMarks: const {},
     );
-    state = state.copyWith(cells: cells, mistakes: newMistakes, status: newStatus);
+    final action = CommitMistake(
+      index: idx,
+      value: digit,
+    );
+    final newUndo = List<GameAction>.from(state.undoStack)..add(action);
+    state = state.copyWith(
+      cells: cells,
+      mistakes: newMistakes,
+      status: newStatus,
+      undoStack: newUndo,
+    );
   }
 
   void _togglePencil(int idx, int digit) {
@@ -291,6 +301,12 @@ class GameNotifier extends StateNotifier<GameState> {
           value: prevValue,
           isError: prevIsError,
           pencilMarks: prevPencilMarks,
+        );
+      case CommitMistake(:final index):
+        cells[index] = cells[index].copyWith(
+          value: 0,
+          isError: false,
+          pencilMarks: const {},
         );
     }
 

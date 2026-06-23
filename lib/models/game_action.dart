@@ -43,3 +43,13 @@ final class EraseCell extends GameAction {
   final bool prevIsError;
   final Set<int> prevPencilMarks;
 }
+
+final class CommitMistake extends GameAction {
+  const CommitMistake({
+    required this.index,
+    required this.value,
+  });
+
+  final int index;
+  final int value;
+}
